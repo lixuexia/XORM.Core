@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "XORM.CBase", "XORM.CBase\XORM.CBase.xproj", "{73430E00-15D3-461A-8904-20FD5282D517}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XORM.CoreTool", "XORM.CoreTool\XORM.CoreTool.csproj", "{1A2C070A-C2CE-4B59-BE5B-BCC20A4D5D47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XORM.CTool", "XORM.CTool\XORM.CTool.csproj", "{19AA77BA-D31B-48D7-8930-A9F3B2B41910}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{73430E00-15D3-461A-8904-20FD5282D517}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73430E00-15D3-461A-8904-20FD5282D517}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73430E00-15D3-461A-8904-20FD5282D517}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1A2C070A-C2CE-4B59-BE5B-BCC20A4D5D47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1A2C070A-C2CE-4B59-BE5B-BCC20A4D5D47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1A2C070A-C2CE-4B59-BE5B-BCC20A4D5D47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1A2C070A-C2CE-4B59-BE5B-BCC20A4D5D47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19AA77BA-D31B-48D7-8930-A9F3B2B41910}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19AA77BA-D31B-48D7-8930-A9F3B2B41910}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19AA77BA-D31B-48D7-8930-A9F3B2B41910}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19AA77BA-D31B-48D7-8930-A9F3B2B41910}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
