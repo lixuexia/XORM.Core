@@ -1,0 +1,6 @@
+﻿{
+  "ConnectionStrings": {
+    "EBS_READ": "Data Source=.;Initial Catalog=demo;UID=demo_read;PWD=123456;",
+    "EBS_WRITE": "Data Source=.;Initial Catalog=demo;UID=demo_write;PWD=654321;"
+  }
+}
