@@ -1,7 +1,0 @@
-﻿{
-  "ConnectionStrings": {
-    "DEMAND_READ": "Data Source=.;Initial Catalog=home_rawdemand;UID=root;PWD=Lixx123456;",
-    "DEMAND_WRITE": "Data Source=.;Initial Catalog=home_rawdemand;UID=root;PWD=Lixx123456;"
-  },
-  "DEMAND_TYPE": "2"
-}
