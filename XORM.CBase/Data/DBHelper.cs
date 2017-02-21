@@ -31,7 +31,7 @@ namespace XORM.CBase.Data
             get
             {
                 string ConnectionString = Configuration.GetConnectionString(_ConnectionMark);
-                DBTypeMARK = 1;
+                DBTypeMARK = Convert.ToInt32(Configuration.GetSection("DEMAND_TYPE").Value);
                 switch (DBTypeMARK)
                 {
                     case 1:

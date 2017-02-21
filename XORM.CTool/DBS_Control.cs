@@ -2,6 +2,8 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Configuration;
+using MySql.Data.MySqlClient;
 
 namespace XORM.CTool
 {
@@ -39,7 +41,10 @@ namespace XORM.CTool
 
         public void CreateAll()
         {
-            string sql_GetStruct =
+            string sql_GetStruct = "";
+            if (ConfigurationManager.ConnectionStrings[this._ConnectionMark].ProviderName == "SQL Server")
+            {
+                sql_GetStruct =
 @"select distinct a.*,b.value as Description,c.name as Xtype_Name,comm.text as dval from 
 (
 select id,colid,name,xtype,length,colstat,autoval,isnullable,COLUMNPROPERTY(a.id,a.name,'IsIdentity') as IsIdentity,cdefault,
@@ -52,19 +57,41 @@ left outer join systypes as c on (a.xtype=c.xtype and c.xtype=c.xusertype)
 left outer join syscomments as comm on a.cdefault = comm.id 
 where b.class_desc ='OBJECT_OR_COLUMN' or b.class_desc is null";
 
-            SqlConnection STRUCTConn = new SqlConnection(this._AdminConnectionString);
-            SqlCommand STRUCTCmd = new SqlCommand(sql_GetStruct, STRUCTConn);
-            SqlDataAdapter STRUCTAdp = new SqlDataAdapter(STRUCTCmd);
-            DataTable SDT = new DataTable();
-            STRUCTAdp.Fill(SDT);
-            STRUCTConn.Close();
-            STRUCTConn.Dispose();
+                SqlConnection STRUCTConn = new SqlConnection(this._AdminConnectionString);
+                SqlCommand STRUCTCmd = new SqlCommand(sql_GetStruct, STRUCTConn);
+                SqlDataAdapter STRUCTAdp = new SqlDataAdapter(STRUCTCmd);
+                DataTable SDT = new DataTable();
+                STRUCTAdp.Fill(SDT);
+                STRUCTConn.Close();
+                STRUCTConn.Dispose();
 
-            if (SDT != null && SDT.Rows.Count > 0)
+                if (SDT != null && SDT.Rows.Count > 0)
+                {
+                    this.CheckAndCreateDir(this._ModelFolder);
+                    //创建数据实体类
+                    this.Create_Class(SDT, this._TableName, this._ModelFolder + "\\" + this._TableName + ".cs", this._ModelNameSpace, this._ModelFolder);
+                }
+            }
+            else if(ConfigurationManager.ConnectionStrings[this._ConnectionMark].ProviderName == "MySQL")
             {
-                this.CheckAndCreateDir(this._ModelFolder);
-                //创建数据实体类
-                this.Create_Class(SDT, this._TableName, this._ModelFolder + "\\" + this._TableName + ".cs", this._ModelNameSpace, this._ModelFolder);
+                sql_GetStruct =
+                    @"select COLUMN_NAME as name,ORDINAL_POSITION,COLUMN_DEFAULT as dval,IS_NULLABLE as isnullable,DATA_TYPE as Xtype_name,case when COLUMN_KEY='PRI' then 1 else 0 end as pk,COLUMN_COMMENT as description,
+case when EXTRA='auto_increment' then '1' else 0 END as IsIdentity from information_schema.columns where  table_name = '" + this._TableName + @"'";
+
+                MySqlConnection STRUCTConn = new MySqlConnection(this._AdminConnectionString);
+                MySqlCommand STRUCTCmd = new MySqlCommand(sql_GetStruct, STRUCTConn);
+                MySqlDataAdapter STRUCTAdp = new MySqlDataAdapter(STRUCTCmd);
+                DataTable SDT = new DataTable();
+                STRUCTAdp.Fill(SDT);
+                STRUCTConn.Close();
+                STRUCTConn.Dispose();
+
+                if (SDT != null && SDT.Rows.Count > 0)
+                {
+                    this.CheckAndCreateDir(this._ModelFolder);
+                    //创建数据实体类
+                    this.Create_Class(SDT, this._TableName, this._ModelFolder + "\\" + this._TableName + ".cs", this._ModelNameSpace, this._ModelFolder);
+                }
             }
         }
         /// <summary>

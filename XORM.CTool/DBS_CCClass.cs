@@ -158,7 +158,7 @@ namespace XORM.CTool
                     }
                     else
                     {
-                        if (info.DefaultVal.ToUpper().Contains("GETDATE"))
+                        if (info.DefaultVal.ToUpper().Contains("GETDATE") || info.DefaultVal.ToUpper().Contains("CURRENT_TIMESTAMP") || info.DefaultVal.ToUpper().Contains("NOW"))
                         {
                             txt.AppendLine("\t\tprivate " + info.CodeTypeStr + " _" + info.ColName + " = DateTime.Now;");
                         }

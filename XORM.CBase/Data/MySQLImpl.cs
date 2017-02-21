@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using XORM.CBase.Data.Common;
@@ -21,7 +22,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(cmdText, cmd, null, CommandType.Text, (MySqlParameter[])cmdParams);
+                CommonPreCmd(cmdText, cmd, null, CommandType.Text, cmdParams);
                 MySqlDataReader rdr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
                 cmd.Parameters.Clear();
                 return rdr;
@@ -99,7 +100,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, (MySqlParameter[])cmdParams);
+                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, cmdParams);
                 MySqlDataAdapter da = new MySqlDataAdapter(cmd);
                 DataSet ds = new DataSet();
                 da.Fill(ds);
@@ -124,7 +125,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, (MySqlParameter[])cmdParams);
+                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, cmdParams);
                 MySqlDataAdapter da = new MySqlDataAdapter(cmd);
                 Common.DataTable dt = new Common.DataTable();
                 da.Fill(dt);
@@ -149,7 +150,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, (MySqlParameter[])cmdParams);
+                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, cmdParams);
                 int val = cmd.ExecuteNonQuery();
                 cmd.Parameters.Clear();
                 this.Close();
@@ -172,7 +173,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, (MySqlParameter[])cmdParams);
+                CommonPreCmd(ProcName, cmd, null, CommandType.StoredProcedure, cmdParams);
                 object val = cmd.ExecuteScalar();
                 cmd.Parameters.Clear();
                 this.Close();
@@ -217,7 +218,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(SQLText, cmd, null, CommandType.Text, (MySqlParameter[])cmdParams);
+                CommonPreCmd(SQLText, cmd, null, CommandType.Text, cmdParams);
                 MySqlDataAdapter da = new MySqlDataAdapter(cmd);
                 DataSet ds = new DataSet();
                 da.Fill(ds);
@@ -242,7 +243,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(SQLText, cmd, null, CommandType.Text, (MySqlParameter[])cmdParams);
+                CommonPreCmd(SQLText, cmd, null, CommandType.Text, cmdParams);
                 MySqlDataAdapter da = new MySqlDataAdapter(cmd);
                 Common.DataTable dt = new Common.DataTable();
                 da.Fill(dt);
@@ -267,7 +268,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(SQLText, cmd, null, CommandType.Text, (MySqlParameter[])cmdParams);
+                CommonPreCmd(SQLText, cmd, null, CommandType.Text, cmdParams);
                 int val = cmd.ExecuteNonQuery();
                 cmd.Parameters.Clear();
                 this.Close();
@@ -290,7 +291,7 @@ namespace XORM.CBase.Data
             MySqlCommand cmd = new MySqlCommand();
             try
             {
-                CommonPreCmd(SQLText, cmd, null, CommandType.Text, (MySqlParameter[])cmdParams);
+                CommonPreCmd(SQLText, cmd, null, CommandType.Text, cmdParams);
                 object val = cmd.ExecuteScalar();
                 cmd.Parameters.Clear();
                 this.Close();
@@ -362,7 +363,7 @@ namespace XORM.CBase.Data
         /// <param name="cmdType"></param>
         /// <param name="cmdText"></param>
         /// <param name="cmdParms"></param>
-        void PrepareCommand(MySqlCommand cmd, MySqlConnection conn, MySqlTransaction trans, CommandType cmdType, string cmdText, MySqlParameter[] cmdParms)
+        void PrepareCommand(MySqlCommand cmd, MySqlConnection conn, MySqlTransaction trans, CommandType cmdType, string cmdText, object[] cmdParms)
         {
             if (conn.State != ConnectionState.Open)
                 conn.Open();
@@ -377,8 +378,7 @@ namespace XORM.CBase.Data
 
             if (cmdParms != null)
             {
-                foreach (MySqlParameter parm in cmdParms)
-                    cmd.Parameters.Add(parm);
+                BuildCommand(cmd, cmdText, cmdParms);
             }
         }
 
@@ -411,7 +411,7 @@ namespace XORM.CBase.Data
         /// <param name="trans"></param>
         /// <param name="cmdType"></param>
         /// <param name="commandParameters"></param>
-        void CommonPreCmd(string cmdText, MySqlCommand cmd, MySqlTransaction trans, CommandType cmdType, params MySqlParameter[] commandParameters)
+        void CommonPreCmd(string cmdText, MySqlCommand cmd, MySqlTransaction trans, CommandType cmdType, params object[] commandParameters)
         {
             if (commandParameters != null)
             {
@@ -421,6 +421,48 @@ namespace XORM.CBase.Data
             {
                 PrepareCommand(cmd, SQLConn, trans, cmdType, cmdText);
             }
+        }
+        #endregion
+
+        #region 查询命令构造
+        /// <summary>
+        /// 查询命令构造
+        /// </summary>
+        /// <param name="sqlPart">部分SQL语句</param>
+        /// <param name="ParamsList">可选参数列表</param>
+        /// <returns></returns>
+        private MySqlCommand BuildCommand(MySqlCommand MyCmd, string sqlPart, object[] ParamsList = null)
+        {
+            if (!string.IsNullOrEmpty(sqlPart))
+            {
+                sqlPart = sqlPart.ToUpper().Replace("@@IDENTITY", "");
+                List<string> ParameterList = new List<string>();
+                Regex reg = new Regex("(@[0-9a-zA-Z_]{1,30})", RegexOptions.IgnoreCase);
+                MatchCollection mc = reg.Matches(sqlPart);
+                if (mc != null && mc.Count > 0)
+                {
+                    foreach (Match m in mc)
+                    {
+                        if (!ParameterList.Contains(m.Groups[1].Value))
+                        {
+                            ParameterList.Add(m.Groups[1].Value);
+                        }
+                    }
+                }
+                if (ParameterList.Count > 0)
+                {
+                    int i = 0;
+                    foreach (string ParameterName in ParameterList)
+                    {
+                        if (!MyCmd.Parameters.Contains(ParameterName))
+                        {
+                            MyCmd.Parameters.AddWithValue(ParameterName, ParamsList[i]);
+                        }
+                        i++;
+                    }
+                }
+            }
+            return MyCmd;
         }
         #endregion
     }

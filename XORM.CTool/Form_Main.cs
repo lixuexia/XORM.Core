@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Windows.Forms;
+using MySql.Data.MySqlClient;
 
 namespace XORM.CTool
 {
@@ -12,6 +13,10 @@ namespace XORM.CTool
         /// 数据库连接字符串
         /// </summary>
         private string DBConnString = string.Empty;
+        /// <summary>
+        /// 数据库类型
+        /// </summary>
+        private string DBType = string.Empty;
         public Form_Main()
         {
             InitializeComponent();
@@ -36,37 +41,74 @@ namespace XORM.CTool
         /// <param name="e"></param>
         private void Conn_Btn_Click(object sender, EventArgs e)
         {
-            string GetTabListCmdTxt =
+            string GetTabListCmdTxt = "";
+            if (this.DBType == "SQL Server")
+            {
+                GetTabListCmdTxt =
 @"select t.id,t.name,d.[value] desctxt from sysobjects t left outer join sys.extended_properties d 
 on t.id=d.major_id and d.minor_id=0
 where t.xtype='U' order by t.name asc";
 
-            SqlConnection MyConn = new SqlConnection(DBConnString);
-            try
-            {
-                if (MyConn.State == ConnectionState.Closed)
+                SqlConnection MyConn = new SqlConnection(DBConnString);
+                try
                 {
-                    MyConn.Open();
+                    if (MyConn.State == ConnectionState.Closed)
+                    {
+                        MyConn.Open();
+                    }
+                }
+                catch
+                {
+                    ShowMsg("数据库连接失败");
+                    return;
+                }
+                SqlCommand MyCmd = new SqlCommand(GetTabListCmdTxt, MyConn);
+                SqlDataAdapter MyAdp = new SqlDataAdapter(MyCmd);
+                DataTable TabDT = new DataTable();
+                MyAdp.Fill(TabDT);
+                if (MyConn.State == ConnectionState.Open)
+                {
+                    MyConn.Close();
+                }
+                ShowMsg("成功获取数据表列表");
+                this.DBTabList.Items.Clear();
+                foreach (DataRow dr in TabDT.Rows)
+                {
+                    this.DBTabList.Items.Add(dr["name"].ToString(), false);
                 }
             }
-            catch
+            else if (this.DBType == "MySQL")
             {
-                ShowMsg("数据库连接失败");
-                return;
-            }
-            SqlCommand MyCmd = new SqlCommand(GetTabListCmdTxt, MyConn);
-            SqlDataAdapter MyAdp = new SqlDataAdapter(MyCmd);
-            DataTable TabDT = new DataTable();
-            MyAdp.Fill(TabDT);
-            if (MyConn.State == ConnectionState.Open)
-            {
-                MyConn.Close();
-            }
-            ShowMsg("成功获取数据表列表");
-            this.DBTabList.Items.Clear();
-            foreach (DataRow dr in TabDT.Rows)
-            {
-                this.DBTabList.Items.Add(dr["name"].ToString(), false);
+                GetTabListCmdTxt =
+                    @"select table_name from information_schema.tables where table_schema='home_rawdemand' and table_type='base table';";
+
+                MySqlConnection MyConn = new MySqlConnection(DBConnString);
+                try
+                {
+                    if (MyConn.State == ConnectionState.Closed)
+                    {
+                        MyConn.Open();
+                    }
+                }
+                catch
+                {
+                    ShowMsg("数据库连接失败");
+                    return;
+                }
+                MySqlCommand MyCmd = new MySqlCommand(GetTabListCmdTxt, MyConn);
+                MySqlDataAdapter MyAdp = new MySqlDataAdapter(MyCmd);
+                DataTable TabDT = new DataTable();
+                MyAdp.Fill(TabDT);
+                if (MyConn.State == ConnectionState.Open)
+                {
+                    MyConn.Close();
+                }
+                ShowMsg("成功获取数据表列表");
+                this.DBTabList.Items.Clear();
+                foreach (DataRow dr in TabDT.Rows)
+                {
+                    this.DBTabList.Items.Add(dr["table_name"].ToString(), false);
+                }
             }
         }
         /// <summary>
@@ -128,7 +170,7 @@ where t.xtype='U' order by t.name asc";
         }
         public void DisplayMessage(string TabName)
         {
-            if(this.Msg_Box.InvokeRequired)
+            if (this.Msg_Box.InvokeRequired)
             {
                 ShowMessageHandler smh = new ShowMessageHandler(ShowMessage);
                 smh.Invoke(TabName);
@@ -170,11 +212,24 @@ where t.xtype='U' order by t.name asc";
         {
             if (this.Combo_Conn.SelectedIndex != -1 && !string.IsNullOrEmpty(this.Combo_Conn.Text))
             {
-                SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString);
-                this.Server_Box.Text = conn.DataSource;
-                this.DataBase_Box.Text = conn.Database;
-                this.DBConnString = ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString;
-                conn.Dispose();
+                if (ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ProviderName == "SQL Server")
+                {
+                    SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString);
+                    this.Server_Box.Text = conn.DataSource;
+                    this.DataBase_Box.Text = conn.Database;
+                    this.DBConnString = ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString;
+                    this.DBType = ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ProviderName;
+                    conn.Dispose();
+                }
+                else if (ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ProviderName == "MySQL")
+                {
+                    MySqlConnection conn = new MySqlConnection(ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString);
+                    this.Server_Box.Text = conn.DataSource;
+                    this.DataBase_Box.Text = conn.Database;
+                    this.DBConnString = ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ConnectionString;
+                    this.DBType = ConfigurationManager.ConnectionStrings[this.Combo_Conn.Text].ProviderName;
+                    conn.Dispose();
+                }
 
                 if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings[this.Combo_Conn.Text + "_DIR"]))
                 {
@@ -184,9 +239,9 @@ where t.xtype='U' order by t.name asc";
                 {
                     this.NameSpaceDAT_Box.Text = ConfigurationManager.AppSettings[this.Combo_Conn.Text + "_NAS"];
                 }
-                if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings[this.Combo_Conn.Text + "CON"]))
+                if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings[this.Combo_Conn.Text + "_CON"]))
                 {
-                    this.CONNMARK_Box.Text = ConfigurationManager.AppSettings[this.Combo_Conn.Text + "CON"];
+                    this.CONNMARK_Box.Text = ConfigurationManager.AppSettings[this.Combo_Conn.Text + "_CON"];
                 }
             }
         }

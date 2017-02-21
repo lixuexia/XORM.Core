@@ -1,6 +1,7 @@
 ﻿{
   "ConnectionStrings": {
-    "EBS_READ": "Data Source=.;Initial Catalog=demo;UID=demo_read;PWD=123456;",
-    "EBS_WRITE": "Data Source=.;Initial Catalog=demo;UID=demo_write;PWD=654321;"
-  }
+    "DEMAND_READ": "Data Source=127.0.0.1;Initial Catalog=home_rawdemand;UID=root;PWD=123456;character set=utf8;Pooling=true;Allow Zero Datetime=true;",
+    "DEMAND_WRITE": "Data Source=127.0.0.1;Initial Catalog=home_rawdemand;UID=root;PWD=123456;character set=utf8;Pooling=true;Allow Zero Datetime=true;"
+  },
+  "DEMAND_TYPE": "2"
 }
